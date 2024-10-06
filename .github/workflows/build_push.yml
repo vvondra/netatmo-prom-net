@@ -1,0 +1,36 @@
+name: Publish and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '7.0.x'
+
+    - name: Publish .NET application
+      run: dotnet publish -c Release -r linux-arm64 --self-contained true /p:PublishLinuxContainer=true
+
+    - name: Build Docker image
+      run: |
+        docker build --platform linux/arm64 -t ghcr.io/${{ github.repository }}/netatmo-prom-net:latest -f Dockerfile .
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push Docker image to GHCR
+      run: docker push ghcr.io/${{ github.repository }}/netatmo-prom-net:latest
