@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM mcr.microsoft.com/dotnet/runtime-deps:7.0
 
 # Set the working directory
 WORKDIR /app
