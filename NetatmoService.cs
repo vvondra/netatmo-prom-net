@@ -1,11 +1,6 @@
-using System;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.Extensions.Logging;
 
 public class NetatmoService
 {
@@ -33,10 +28,35 @@ public class NetatmoService
             await RefreshToken();
         }
     }
-
     private async Task RefreshToken()
     {
-        // ... (keep the existing RefreshToken logic)
+        try
+        {
+            var client = _clientFactory.CreateClient();
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                new KeyValuePair<string, string>("refresh_token", _refreshToken),
+                new KeyValuePair<string, string>("client_id", _configuration["NETATMO_CLIENT_ID"]),
+                new KeyValuePair<string, string>("client_secret", _configuration["NETATMO_CLIENT_SECRET"])
+            });
+
+            var response = await client.PostAsync("https://api.netatmo.com/oauth2/token", content);
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var tokenData = JsonSerializer.Deserialize<JsonNode>(responseContent);
+
+            _authToken = tokenData["access_token"].GetValue<string>();
+            _refreshToken = tokenData["refresh_token"].GetValue<string>();
+            _tokenExpirationTime = DateTime.UtcNow.AddSeconds(tokenData["expires_in"].GetValue<int>());
+
+            _logger.LogInformation("Token refreshed successfully. New expiration: {ExpirationTime}", _tokenExpirationTime);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to refresh token");
+            throw;
+        }
     }
 
     public async Task<JsonNode> FetchHomes()
