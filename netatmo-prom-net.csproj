@@ -17,7 +17,6 @@
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>link</TrimMode>
     <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
     <RuntimeIdentifier>linux-arm64</RuntimeIdentifier>
     <PublishReadyToRun>true</PublishReadyToRun>
     <DebugType>none</DebugType>
